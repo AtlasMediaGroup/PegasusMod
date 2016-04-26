@@ -54,6 +54,7 @@ public class Command_nick
                 if (!PM_Rank.isRankOrHigher(sender, PM_Rank.Rank.SUPER))
                 {
                     sender.sendMessage(PM_Utils.NO_PERMS_MESSAGE);
+                    return true;
                 }
 
                 if (!PM_SqlHandler.playerExists(args[0]))
