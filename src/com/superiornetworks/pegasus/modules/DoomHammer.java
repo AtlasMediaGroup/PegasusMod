@@ -1,0 +1,91 @@
+package com.superiornetworks.pegasus.modules;
+
+import com.superiornetworks.pegasus.PM_Bans;
+import com.superiornetworks.pegasus.PM_SqlHandler;
+import com.superiornetworks.pegasus.PM_Utils;
+import com.superiornetworks.pegasus.PegasusMod;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
+
+public class DoomHammer extends IcarusModule implements Listener
+{
+
+    public DoomHammer(PegasusMod plugin)
+    {
+        super(plugin);
+    }
+
+    @EventHandler
+    public void onPlayerUseItem(PlayerInteractEvent event)
+    {
+        try
+        {
+            ItemStack item = event.getItem();
+            Player player = event.getPlayer();
+            if (item == null)
+            {
+                return;
+            }
+            Entity e = null;
+            if (item.equals(PM_Utils.getDoomHammer()) && PM_SqlHandler.hasDoomHammer(player.getName()))
+            {
+                for (Block block : player.getLineOfSight((HashSet<Byte>) null, 50))
+                {
+                    Location loc2 = block.getLocation();
+                    for (LivingEntity entity : player.getWorld().getLivingEntities())
+                    {
+                        if (entity.getLocation().distance(loc2) <= 2 && !entity.equals(player))
+                        {
+                            e = entity;
+                        }
+                    }
+                }
+                if (e instanceof Player)
+                {
+                    Player eplayer = (Player) e;
+                    PM_Bans.addBan(eplayer, player, "Hit by " + player.getName() + "'s DoomHammer!", TimeUnit.MILLISECONDS.convert(24, TimeUnit.HOURS));
+                    PM_Utils.adminAction(player.getName(), "Casting oblivion over " + eplayer.getName(), true);
+                    Bukkit.broadcastMessage(ChatColor.RED + eplayer.getName() + " will be completely obliviated!");
+                }
+                else if (e instanceof LivingEntity)
+                {
+                    final LivingEntity le = (LivingEntity) e;
+                    le.setVelocity(le.getVelocity().add(new Vector(0, 3, 0)));
+                    new BukkitRunnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            le.getWorld().createExplosion(le.getLocation().getX(), le.getLocation().getY(), le.getLocation().getZ(), 5f, false, false);
+                            le.getWorld().strikeLightningEffect(le.getLocation());
+                            le.setHealth(0d);
+                        }
+                    }.runTaskLater(PegasusMod.plugin, 20L * 2L);
+
+                }
+                event.setCancelled(true);
+            }
+        }
+        catch (SQLException ex)
+        {
+            Logger.getLogger(DoomHammer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+}

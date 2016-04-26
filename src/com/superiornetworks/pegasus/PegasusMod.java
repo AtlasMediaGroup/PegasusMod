@@ -1,0 +1,188 @@
+package com.superiornetworks.pegasus;
+
+import com.superiornetworks.pegasus.modules.*;
+import com.superiornetworks.pegasus.commands.ICM_CommandRegistry;
+import com.superiornetworks.pegasus.listeners.PlayerListener;
+import java.sql.SQLException;
+import me.husky.mysql.MySQL;
+import net.pravian.aero.command.handler.AeroCommandHandler;
+import net.pravian.aero.plugin.AeroPlugin;
+import net.pravian.aero.util.Loggers;
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.scheduler.BukkitRunnable;
+
+public class PegasusMod extends AeroPlugin<PegasusMod>
+{
+
+    public static PegasusMod plugin;
+
+    public static AeroCommandHandler handler;
+
+    public static ICM_CommandRegistry registry;
+
+    // MySQL  
+    public static MySQL mySQL;
+
+    // YAML File Information
+    public static PM_Config icmconfig;
+    public static FileConfiguration config;
+
+    // Module Information
+    public FamousWarning famousWarning;
+    public BusySystem busySystem;
+    public CreativePVP creativePVP;
+    public DoomHammer doomHammer;
+    public DevelopmentMode developmentMode;
+    public ChatModule chatModule;
+    public JoinModule joinModule;
+    public CommandBlockModule commandBlockModule;
+    public CommandSpyModule commandSpyModule;
+    public ImposterModule imposterModule;
+    public BlockControl blockControl;
+
+    @Override
+    public void load()
+    {
+        plugin = this;
+
+        // Module Loading
+        famousWarning = new FamousWarning(plugin);
+        busySystem = new BusySystem(plugin);
+        creativePVP = new CreativePVP(plugin);
+        doomHammer = new DoomHammer(plugin);
+        developmentMode = new DevelopmentMode(plugin);
+        chatModule = new ChatModule(plugin);
+        joinModule = new JoinModule(plugin);
+        commandBlockModule = new CommandBlockModule(plugin);
+        commandSpyModule = new CommandSpyModule(plugin);
+        imposterModule = new ImposterModule(plugin);
+        blockControl = new BlockControl(plugin);
+    }
+
+    @Override
+    public void enable()
+    {
+        //Creates a reference to a plugin instance
+        PegasusMod.plugin = this;
+
+        // More YAML Setting Up and information.
+        icmconfig = new PM_Config(plugin, "config.yml");
+        icmconfig.saveDefaultConfig();
+        config = icmconfig.getConfig();
+
+        //Check 
+        boolean error = false;
+        if(config.getString("hostname") == null || config.getString("hostname").equalsIgnoreCase(""))
+        {
+            Loggers.severe(plugin, "Hostname is null in the config, please stop the server, amend the fault and then restart. IcarusMod will not load until this error is resolved.");
+            error = true;
+        }
+        if(config.getString("port") == null || config.getString("port").equalsIgnoreCase(""))
+        {
+            Loggers.severe(plugin, "Port is null in the config, please stop the server, amend the fault and then restart. IcarusMod will not load until this error is resolved.");
+            error = true;
+        }
+        if(config.getString("database") == null || config.getString("database").equalsIgnoreCase(""))
+        {
+            Loggers.severe(plugin, "Database is null in the config, please stop the server, amend the fault and then restart. IcarusMod will not load until this error is resolved.");
+            error = true;
+        }
+        if(config.getString("username") == null || config.getString("username").equalsIgnoreCase(""))
+        {
+            Loggers.severe(plugin, "Username is null in the config, please stop the server, amend the fault and then restart. IcarusMod will not load until this error is resolved.");
+            error = true;
+        }
+        if(config.getString("password") == null || config.getString("password").equalsIgnoreCase(""))
+        {
+            Loggers.severe(plugin, "Password is null in the config, please stop the server, amend the fault and then restart. IcarusMod will not load until this error is resolved.");
+            error = true;
+        }
+
+        final PluginManager pm = plugin.getServer().getPluginManager();
+        if(!error)
+        {
+            // Listeners
+            pm.registerEvents(new PlayerListener(plugin), plugin);
+
+            //Handling MySQL
+            //Create MySQL
+            mySQL = new MySQL(plugin, config.getString("hostname"), config.getString("port"), config.getString("database"), config.getString("username"), config.getString("password"));
+            try
+            {
+                //Generate Default Tables
+                Bukkit.broadcastMessage("Generating all required tables.");
+                PM_SqlHandler.generateTables();
+                PM_Settings.generateDefaultSettings();
+            }
+            catch(SQLException ex)
+            {
+                plugin.getLogger().severe(ex.getLocalizedMessage());
+            }
+
+            //Enable Commands
+            registry = new ICM_CommandRegistry();
+
+            //Handles logs from the server
+            Bukkit.getServer().getLogger().addHandler(new PM_LoggerHandler());
+
+            //Handles data logging (TPS, RAM usage, Online Players)
+            PM_TpsFinder tpsfinder = new PM_TpsFinder();
+            tpsfinder.runTaskTimerAsynchronously(plugin, 0, 20L * 15L);
+            PM_DetailLogger detaillogger = new PM_DetailLogger();
+            detaillogger.runTaskTimerAsynchronously(plugin, 0, 20L * 15L);
+
+            //Schedues auto cache refreshing every 15 seconds
+            if(PM_Rank.shouldCache())
+            {
+                new BukkitRunnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        PM_Rank.nicks.clear();
+                        PM_Rank.tags.clear();
+                        PM_Rank.ranks.clear();
+                    }
+                }.runTaskTimerAsynchronously(plugin, 0, 20L * 15L);
+            }
+
+            //Schedules MySQL to commit every 5 seconds, instantaneous commits may decrease performance
+            new BukkitRunnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        PM_SqlHandler.getConnection().commit();
+                    }
+                    catch(SQLException ex)
+                    {
+                        Loggers.severe(plugin, ex.getMessage());
+                    }
+                }
+            }.runTaskTimerAsynchronously(plugin, 0, 20L * 5L);
+
+            //All clear
+            Loggers.info(plugin, "has been enabled with no problems.");
+        }
+        else
+        {
+            Bukkit.broadcastMessage("IcarusMod had an issue loading up, please check your logs for more info, on first start, this is normal!");
+            pm.disablePlugin(plugin);
+        }
+
+    }
+
+    @Override
+    public void disable()
+    {
+        //Unregistering custom commands
+        registry.unregisterCommands();
+        PegasusMod.plugin = null;
+        // All clear, its disabled! Woot
+        Loggers.info(plugin, "has been disabled with no problems.");
+    }
+}

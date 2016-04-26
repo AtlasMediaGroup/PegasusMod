@@ -1,0 +1,44 @@
+name: PegasusMod
+version: 1.0
+description: The custom plugin to work on the CJFreedom Network's Hub
+authors: [Wild1145, Camzie99, Hockeyfan360, Paul19988]
+main: com.superiornetworks.pegasus.PegasusMod
+softdepend: [Aero]
+
+commands:
+  busy:
+    description: Puts you in the busy status.
+    usage: /<command>
+  icmtoggle:
+    description: Allows you to toggle certain aspects of the IcarusMod
+    usage: /toggle <setting>
+  devmode:
+    description: Allows you to turn on devmode.
+    usage: /<command> <everyone|admins|developers|off>
+  report:
+    description: Files a report against another player
+    usage: /<command> <player> <reason>
+  p:
+    description: Allows you to chat with seniors in private.
+    usage: /<command> <message>
+  setlogin:
+    description: Set your login message.
+    usage: /<command> <message>
+  saconfig:
+    description: Admin management.
+    usage: /<command> <list | <add | delete> <username> <rank level>>
+  tag:
+    description: Set someone's tag.
+    usage: /<command> <set:playername> <tag>
+  say:
+    description: Broadcast a message in chat.
+    usage: /<command> <message>
+  smite:
+    description: Smite a naughty player.
+    usage: /<command> <player>
+  nick:
+    description: Set someone's nickname.
+    usage: /<command> <set:playername> <nick>
+  reqop:
+    descrpition: Requests operator status on the server
+    usage: /<command>

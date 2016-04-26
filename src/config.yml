@@ -1,0 +1,18 @@
+#IcarusMod Config File
+#MySQL Details
+
+hostname:
+    
+port:
+    
+database:
+    
+username:
+    
+password:
+    
+serveridentifier:
+
+toggles:
+    AdminWorld: true
+    caching: false
