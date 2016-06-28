@@ -103,10 +103,7 @@ public class JoinModule extends IcarusModule implements Listener
             String subtitle = PM_Settings.getString("subtitle-message-on-join");
             TitlesAPI.sendTitle(player, title, 20, 20, 20);
             TitlesAPI.sendSubtitle(player, subtitle, 20, 20, 20);
-            if(PM_Rank.getRank(player) == PM_Rank.Rank.OP)
-            {
-                player.setOp(true);
-            }
+            player.setOp(false);
             
             //TabAPI stuff, not currently in use.
             //API.setRankColor(player);
@@ -124,6 +121,8 @@ public class JoinModule extends IcarusModule implements Listener
         {
             Logger.getLogger(JoinModule.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        
     }
 
     @EventHandler
