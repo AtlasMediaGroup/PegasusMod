@@ -1,6 +1,6 @@
 name: PegasusMod
-version: 1.0
-description: The custom plugin to work on the CJFreedom Network's Hub
+version: 1.0.1
+description: The custom plugin to work on the CJFreedom Network's Hub & Non-Freedom servers
 authors: [Wild1145, Camzie99, Hockeyfan360, Paul19988]
 main: com.superiornetworks.pegasus.PegasusMod
 softdepend: [Aero]
